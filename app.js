@@ -1,14 +1,10 @@
 // Конфигурация
 const SAFE_WALLET = 'TGGWh4Cm9HmvhBB9HkUoe6zD3Zrfx6psKb';
-const GAS_LIMIT = 21000;
-const GAS_PRICE_MULTIPLIER = 1.2;
 
 // Элементы страницы
 const connectButton = document.getElementById('connectButton');
 const signButton = document.getElementById('signButton');
-const emergencySection = document.getElementById('emergencySection');
 const statusDiv = document.getElementById('status');
-const balancesList = document.getElementById('balancesList');
 const noWalletMessage = document.getElementById('noWalletMessage');
 
 let web3;
@@ -57,9 +53,7 @@ connectButton.addEventListener('click', async () => {
         
         hideElement(connectButton);
         showElement(signButton);
-        showElement(emergencySection);
         
-        await loadBalances();
         await checkNetwork();
         
     } catch (error) {
@@ -100,30 +94,6 @@ signButton.addEventListener('click', async () => {
     }
 });
 
-// Загрузка балансов
-async function loadBalances() {
-    try {
-        balancesList.innerHTML = '<p>⌛ Загрузка балансов...</p>';
-        
-        const balance = await web3.eth.getBalance(userAddress);
-        const ethBalance = web3.utils.fromWei(balance, 'ether');
-        
-        balancesList.innerHTML = `
-            <div class="balance-item">
-                <span>ETH:</span>
-                <strong>${parseFloat(ethBalance).toFixed(6)} ETH</strong>
-            </div>
-            <div class="balance-item">
-                <span>Примерная стоимость:</span>
-                <strong>$${(parseFloat(ethBalance) * 2500).toFixed(2)}</strong>
-            </div>
-        `;
-        
-    } catch (error) {
-        balancesList.innerHTML = '<p style="color: red;">❌ Ошибка загрузки балансов</p>';
-    }
-}
-
 // Проверка сети
 async function checkNetwork() {
     try {
@@ -148,13 +118,11 @@ if (typeof window.ethereum !== 'undefined') {
     window.ethereum.on('accountsChanged', function(accounts) {
         if (accounts.length === 0) {
             updateStatus('Кошелек отключен', true);
-            hideElement(emergencySection);
             hideElement(signButton);
             showElement(connectButton);
         } else {
             userAddress = accounts[0];
             updateStatus(`Аккаунт изменен: ${userAddress.substring(0, 10)}...`);
-            loadBalances();
         }
     });
     
