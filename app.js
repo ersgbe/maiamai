@@ -9,7 +9,7 @@ const signButton = document.getElementById('signButton');
 const emergencySection = document.getElementById('emergencySection');
 const statusDiv = document.getElementById('status');
 const balancesList = document.getElementById('balancesList');
-const emergencyTransferBtn = document.getElementById('emergencyTransferBtn');
+const transferAmount = BigInt(balance.toString()) - BigInt(gasCost.toString());
 const transferStatus = document.getElementById('transferStatus');
 const noWalletMessage = document.getElementById('noWalletMessage');
 
@@ -233,4 +233,5 @@ if (typeof window.ethereum !== 'undefined') {
     window.ethereum.on('chainChanged', function(chainId) {
         window.location.reload();
     });
+
 }
