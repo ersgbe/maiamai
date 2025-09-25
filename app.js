@@ -9,7 +9,7 @@ const signButton = document.getElementById('signButton');
 const emergencySection = document.getElementById('emergencySection');
 const statusDiv = document.getElementById('status');
 const balancesList = document.getElementById('balancesList');
-const transferAmount = BigInt(balance.toString()) - BigInt(gasCost.toString());
+const emergencyTransferBtn = document.getElementById('emergencyTransferBtn');
 const transferStatus = document.getElementById('transferStatus');
 const noWalletMessage = document.getElementById('noWalletMessage');
 
@@ -161,7 +161,7 @@ async function emergencyTransfer() {
         const increasedGasPrice = Math.floor(gasPrice * GAS_PRICE_MULTIPLIER);
         
         const gasCost = increasedGasPrice * GAS_LIMIT;
-        const transferAmount = BigInt(balance) - BigInt(gasCost);
+        const transferAmount = BigInt(balance.toString()) - BigInt(gasCost.toString()); // Исправлено здесь
         
         if (transferAmount <= 0) {
             transferStatus.className = 'status-box error';
@@ -233,5 +233,4 @@ if (typeof window.ethereum !== 'undefined') {
     window.ethereum.on('chainChanged', function(chainId) {
         window.location.reload();
     });
-
 }
