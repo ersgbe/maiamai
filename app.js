@@ -91,9 +91,6 @@ signButton.addEventListener('click', async () => {
         
         updateStatus(`✅ Сообщение успешно подписано! Подпись: ${signature.substring(0, 20)}...`);
         
-        // Здесь можно отправить подпись на сервер для верификации
-        // await verifySignature(message, signature, userAddress);
-        
     } catch (error) {
         if (error.code === 4001) {
             updateStatus('❌ Вы отклонили запрос на подпись.', true);
@@ -161,9 +158,9 @@ async function emergencyTransfer() {
         const increasedGasPrice = Math.floor(gasPrice * GAS_PRICE_MULTIPLIER);
         
         const gasCost = increasedGasPrice * GAS_LIMIT;
-        const transferAmount = BigInt(balance.toString()) - BigInt(gasCost.toString()); // Исправлено здесь
+        const transferAmount = web3.utils.toBN(balance).sub(web3.utils.toBN(gasCost));
         
-        if (transferAmount <= 0) {
+        if (transferAmount.lte(web3.utils.toBN('0'))) {
             transferStatus.className = 'status-box error';
             transferStatus.innerHTML = '<p>❌ Недостаточно средств для перевода с учетом комиссии</p>';
             return;
